@@ -1,0 +1,5 @@
+2024-12-31 18:13:29,094 - INFO - Note: NumExpr detected 32 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 16.
+2024-12-31 18:13:29,094 - INFO - NumExpr defaulting to 16 threads.
+2024-12-31 18:14:09,894 - INFO - Starting Overpass query for 'hotels and motels' within 15 km around (52.4823, 1.89).
+2024-12-31 18:14:10,154 - WARNING - No data to save. The data list is empty.
+2024-12-31 18:14:10,154 - INFO - Scraping complete.
