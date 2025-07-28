@@ -1,0 +1,42 @@
+# -------------------------------
+# Python-related ignores
+# -------------------------------
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyd
+*.pyo
+*.pyd
+
+# If you're using virtual environments,
+# add the name of your venv folder:
+venv/
+.venv/
+
+# -------------------------------
+# Logs and local config
+# -------------------------------
+*.log
+process_log.log
+
+# -------------------------------
+# OS-specific files
+# -------------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------------
+# IDE / Editor settings
+# -------------------------------
+.vscode/
+.idea/
+
+# -------------------------------
+# Output data or large files
+# -------------------------------
+data/output/
+
+# -------------------------------
+# (Optional) If you have environment variables:
+# -------------------------------
+.env

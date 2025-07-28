@@ -1,78 +1,78 @@
-# main.py
-
 import logging
 
-# Local modules
-from modules.input_handler import get_user_inputs
-from modules.api_requests import create_session, query_osm_businesses
+from modules.api_requests import create_session, query_osm_tags_in_area
 from modules.scraping import scrape_emails_and_phone
 from modules.data_processing import save_to_csv
 
 def main():
     """
-    Main function that:
-    1. Gets user input (sector, lat, lon, radius).
-    2. Queries Overpass API with a single bounding search to minimize calls.
-    3. Scrapes each found business website for additional emails/phones.
-    4. Saves the results to a CSV file in the 'data/output' folder.
+    Main function to query restaurants, pizza shops, burger shops, and other food establishments.
     """
-    # 1. Prompt user for inputs
-    sector, center_lat, center_lon, radius_km = get_user_inputs()
-
-    # 2. Create an HTTP session with retries
+    # 1. Create an HTTP session with retries
     session = create_session()
-    logging.info(f"Starting Overpass query for '{sector}' within {radius_km} km around ({center_lat}, {center_lon}).")
 
-    # 3. Perform the Overpass query
-    overpass_data = query_osm_businesses(session, center_lat, center_lon, radius_km, sector)
+    # 2. Define your array of tags for food establishments
+    food_establishments_tags = [
+        {"amenity": "restaurant"},        # Restaurants
+        {"amenity": "fast_food"},         # Fast Food Chains
+        {"cuisine": "pizza"},             # Pizza Shops
+        {"cuisine": "burger"},            # Burger Shops
+        {"cuisine": "chinese"},           # Chinese Restaurants
+        {"cuisine": "indian"},            # Indian Restaurants
+        {"cuisine": "mexican"},           # Mexican Restaurants
+        {"cuisine": "japanese"},          # Japanese Restaurants
+        {"cuisine": "kebab"},             # Kebab Shops
+        {"cuisine": "italian"},           # Italian Restaurants
+    ]
 
-    # 4. Gather data and avoid duplicates by tracking element IDs
+    # 3. Query Overpass (all of England for these tags)
+    logging.info("Querying Overpass for food establishments in England...")
+    results = query_osm_tags_in_area(session, area_name="England", tag_list=food_establishments_tags, timeout=300)
+
+    # 4. Process and scrape websites
     businesses = []
     unique_ids = set()
 
-    for element in overpass_data:
-        element_id = element.get("id")
-        if element_id in unique_ids:
-            continue  # Skip duplicates
-        unique_ids.add(element_id)
+    for element in results:
+        elem_id = element.get("id")
+        if elem_id in unique_ids:
+            continue
+        unique_ids.add(elem_id)
 
         tags = element.get("tags", {})
         name = tags.get("name", "N/A")
-        website = tags.get("website", None)
-
-        # Construct address from OSM tags
+        website = tags.get("website", "")
         street = tags.get("addr:street", "")
         city = tags.get("addr:city", "")
         postcode = tags.get("addr:postcode", "")
         address = ", ".join([street, city, postcode]).strip(", ")
 
-        phone_number = tags.get("phone", "N/A")
+        phone = tags.get("phone", "N/A")
         email = tags.get("email", "N/A")
-        opening_hours = tags.get("opening_hours", "N/A")
-        description = tags.get("description", "N/A")
 
-        # If a website is available, scrape it for additional info
+        # Scrape the website for additional contact info if available
         additional_emails, additional_phones = [], []
-        if website and website.startswith("http"):
+        if website.startswith("http"):
             scraped_emails, scraped_phones = scrape_emails_and_phone(website)
             additional_emails = scraped_emails
             additional_phones = scraped_phones
 
-        businesses.append({
-            "name": name,
-            "address": address if address else "N/A",
-            "website": website if website else "N/A",
-            "phone_number": phone_number,
-            "email": email,
-            "additional_emails": ", ".join(additional_emails) if additional_emails else "N/A",
-            "additional_phone_numbers": ", ".join(additional_phones) if additional_phones else "N/A",
-            "opening_hours": opening_hours,
-            "description": description
-        })
+        # Only add rows with meaningful data
+        if name != "N/A" or address != "N/A" or phone != "N/A" or email != "N/A" or website != "N/A":
+            businesses.append({
+                "id": elem_id,
+                "name": name,
+                "address": address if address else "N/A",
+                "phone": phone,
+                "email": email,
+                "website": website if website else "N/A",
+                "additional_emails": ", ".join(additional_emails) if additional_emails else "N/A",
+                "additional_phones": ", ".join(additional_phones) if additional_phones else "N/A"
+            })
 
     # 5. Save results to CSV
-    save_to_csv(businesses, sector)
-    logging.info("Scraping complete.")
+    save_to_csv(businesses, filename="food_establishments_in_england.csv")
+    logging.info("Data saved. Done!")
 
 if __name__ == "__main__":
     main()
